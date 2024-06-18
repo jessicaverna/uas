@@ -14,11 +14,13 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'pin',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'pin',
     ];
 
     public function bankAccounts()

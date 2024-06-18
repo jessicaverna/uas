@@ -16,9 +16,18 @@
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
+        <div class="form-group">
+            <label for="pin">PIN</label>
+            <input type="password" name="pin" id="pin" class="form-control @error('pin') is-invalid @enderror" required>
+            @error('pin')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
         <button type="submit" class="btn btn-primary">Add Account</button>
     </form>
 </div>
+
+
 
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>

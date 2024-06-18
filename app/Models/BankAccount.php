@@ -10,10 +10,10 @@ class BankAccount extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
         'account_name',
         'account_number',
         'balance',
+        'pin',
     ];
 
     public function user()

@@ -19,7 +19,7 @@
                     <td>{{ $account->account_number }}</td>
                     <td>${{ number_format($account->balance, 2) }}</td>
                     <td>
-                        <a href="{{ route('bank_accounts.edit', $account) }}" class="btn btn-warning btn-sm">Edit</a>
+                        <a href="{{ route('bank_accounts.verify_edit', $account) }}" class="btn btn-warning btn-sm">Edit</a>
                         <form action="{{ route('bank_accounts.destroy', $account) }}" method="POST" class="d-inline">
                             @csrf
                             @method('DELETE')
