@@ -79,7 +79,7 @@ class BankAccountController extends Controller
 
         return redirect()->route('bank_accounts.index')->with('success', 'Account deleted successfully.');
     }
-    
+
     public function verifyEdit(BankAccount $bankAccount)
     {
         return view('bank_accounts.verify_pin', compact('bankAccount'));
@@ -99,4 +99,91 @@ class BankAccountController extends Controller
         // Redirect ke halaman edit setelah PIN diverifikasi
         return redirect()->route('bank_accounts.edit', $bankAccount);
     }
+
+    public function showTransferForm(BankAccount $bank_account)
+    {
+        return view('bank_accounts.transfer', compact('bank_account'));
+    }
+
+    public function transfer(Request $request, BankAccount $bank_account)
+    {
+        $request->validate([
+            'target_account_number' => 'required|exists:bank_accounts,account_number',
+            'amount' => 'required|numeric|min:0.01',
+        ]);
+
+        $targetAccount = BankAccount::where('account_number', $request->target_account_number)->first();
+
+        if (!$targetAccount) {
+            return back()->withErrors(['target_account_number' => 'Target account number not found.'])->withInput();
+        }
+
+        return view('bank_accounts.confirm_transfer', [
+            'bank_account' => $bank_account,
+            'target_account' => $targetAccount,
+            'amount' => $request->amount,
+        ]);
+    }
+
+    public function confirmTransfer(Request $request, BankAccount $bank_account)
+    {
+        $request->validate([
+            'target_account_number' => 'required|exists:bank_accounts,account_number',
+            'amount' => 'required|numeric|min:0.01',
+            'pin' => 'required|digits:4',
+        ]);
+
+        $targetAccount = BankAccount::where('account_number', $request->target_account_number)->first();
+
+        if (!$targetAccount) {
+            return back()->withErrors(['target_account_number' => 'Target account number not found.'])->withInput();
+        }
+
+        if ($bank_account->balance < $request->amount) {
+            return back()->withErrors(['amount' => 'Insufficient balance.'])->withInput();
+        }
+
+        return view('bank_accounts.confirm_transfer', [
+            'bank_account' => $bank_account,
+            'target_account' => $targetAccount,
+            'amount' => $request->amount,
+            'pin' => $request->pin, // Untuk verifikasi PIN
+        ]);
+    }
+
+    public function processTransfer(Request $request, BankAccount $bank_account)
+    {
+        $request->validate([
+            'target_account_number' => 'required|exists:bank_accounts,account_number',
+            'amount' => 'required|numeric|min:0.01',
+            'pin' => 'required|digits:4',
+        ]);
+
+        $targetAccount = BankAccount::where('account_number', $request->target_account_number)->first();
+
+        if (!$targetAccount) {
+            return back()->withErrors(['target_account_number' => 'Target account number not found.'])->withInput();
+        }
+
+        if ($bank_account->balance < $request->amount) {
+            return back()->withErrors(['amount' => 'Insufficient balance.'])->withInput();
+        }
+
+        // Verifikasi PIN
+        if ($request->pin !== $bank_account->pin) {
+            return back()->withErrors(['pin' => 'Invalid PIN.'])->withInput();
+        }
+
+        // Proses transfer
+        $bank_account->balance -= $request->amount;
+        $targetAccount->balance += $request->amount;
+
+        $bank_account->save();
+        $targetAccount->save();
+
+        return redirect()->route('bank_accounts.index')->with('success', 'Transfer successful.');
+    }
+
+
+
 }

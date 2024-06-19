@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\UserController;
+use App\Models\BankAccount;
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -24,6 +26,24 @@ Route::middleware('auth')->group(function () {
     
     Route::put('bank_accounts/{bank_account}/check-pin', [BankAccountController::class, 'checkPIN'])
     ->name('bank_accounts.check_pin');
+    
+    Route::get('/bank_accounts/{bank_account}/transfer', [BankAccountController::class, 'showTransferForm'])->name('bank_accounts.show_transfer_form');
+Route::post('/bank_accounts/{bank_account}/transfer', [BankAccountController::class, 'transfer'])->name('bank_accounts.transfer');
+Route::post('/bank_accounts/{bank_account}/process-transfer', [BankAccountController::class, 'processTransfer'])->name('bank_accounts.process_transfer');
+
+    
+    Route::post('bank_accounts/{bank_account}/confirm-transfer', [BankAccountController::class, 'confirmTransfer'])->name('bank_accounts.confirm_transfer');
+
+    Route::get('bank_accounts/{account_number}/name', function ($account_number) {
+        $bankAccount = BankAccount::where('account_number', $account_number)->first();
+    
+        if (!$bankAccount) {
+            return response()->json(['error' => 'Account number not found.'], 404);
+        }
+    
+        return response()->json(['account_name' => $bankAccount->account_name]);
+    });
+    
 
 
 });
