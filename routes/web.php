@@ -31,7 +31,9 @@ Route::middleware('auth')->group(function () {
 Route::post('/bank_accounts/{bank_account}/transfer', [BankAccountController::class, 'transfer'])->name('bank_accounts.transfer');
 Route::post('/bank_accounts/{bank_account}/process-transfer', [BankAccountController::class, 'processTransfer'])->name('bank_accounts.process_transfer');
 
-    
+Route::get('bank_accounts/{bank_account}/transactions', [BankAccountController::class, 'transactions'])
+->name('bank_accounts.transactions');
+
     Route::post('bank_accounts/{bank_account}/confirm-transfer', [BankAccountController::class, 'confirmTransfer'])->name('bank_accounts.confirm_transfer');
 
     Route::get('bank_accounts/{account_number}/name', function ($account_number) {

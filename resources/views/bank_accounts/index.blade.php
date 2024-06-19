@@ -21,6 +21,7 @@
                     <td>
                         <a href="{{ route('bank_accounts.verify_edit', $account) }}" class="btn btn-warning btn-sm">Edit</a>
                         <a href="{{ route('bank_accounts.show_transfer_form', $account) }}" class="btn btn-info btn-sm">Transfer</a>
+                        <a href="{{ route('bank_accounts.transactions', $account) }}" class="btn btn-secondary btn-sm">Transaction History</a>
                         <form action="{{ route('bank_accounts.destroy', $account) }}" method="POST" class="d-inline">
                             @csrf
                             @method('DELETE')

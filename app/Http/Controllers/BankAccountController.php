@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BankAccount;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 
 class BankAccountController extends Controller
@@ -178,6 +179,9 @@ class BankAccountController extends Controller
         $bank_account->balance -= $request->amount;
         $targetAccount->balance += $request->amount;
 
+        // Simpan transaksi
+        $this->saveTransaction($bank_account, $targetAccount, $request->amount);
+
         $bank_account->save();
         $targetAccount->save();
 
@@ -185,5 +189,34 @@ class BankAccountController extends Controller
     }
 
 
+    private function saveTransaction(BankAccount $sender, BankAccount $receiver, $amount)
+    {
+        $transactionSender = new Transaction([
+            'user_id' => auth()->user()->id,
+            'bank_account_id' => $sender->id,
+            'type' => 'transfer',
+            'amount' => $amount,
+            'description' => 'Transfer to account ' . $receiver->account_number,
+        ]);
+        $transactionSender->save();
 
+        $transactionReceiver = new Transaction([
+            'user_id' => $receiver->user_id,
+            'bank_account_id' => $receiver->id,
+            'type' => 'transfer',
+            'amount' => $amount,
+            'description' => 'Receive from account ' . $sender->account_number,
+        ]);
+        $transactionReceiver->save();
+    }
+
+
+    public function transactions(BankAccount $bank_account)
+    {
+        $transactions = Transaction::where('bank_account_id', $bank_account->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('bank_accounts.transactions', compact('transactions', 'bank_account'));
+    }
 }
