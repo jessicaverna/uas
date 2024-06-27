@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BankAccount;
 use App\Models\Transaction;
 use App\Models\Bill;
+use Illuminate\Support\Facades\DB; //
 use Illuminate\Http\Request;
 
 class BankAccountController extends Controller
@@ -180,7 +181,6 @@ class BankAccountController extends Controller
             'pin' => $request->pin, // Untuk verifikasi PIN
         ]);
     }
-
     public function processTransfer(Request $request, BankAccount $bank_account)
     {
         $request->validate([
@@ -188,6 +188,11 @@ class BankAccountController extends Controller
             'amount' => 'required|numeric|min:0.01',
             'pin' => 'required|digits:4',
         ]);
+
+        // Validasi PIN
+        if ($bank_account->pin !== $request->pin) {
+            return back()->withErrors(['pin' => 'Invalid PIN.'])->withInput();
+        }
 
         $targetAccount = BankAccount::where('account_number', $request->target_account_number)->first();
 
@@ -199,20 +204,19 @@ class BankAccountController extends Controller
             return back()->withErrors(['amount' => 'Insufficient balance.'])->withInput();
         }
 
-        // Verifikasi PIN
-        if ($request->pin !== $bank_account->pin) {
-            return back()->withErrors(['pin' => 'Invalid PIN.'])->withInput();
-        }
-
         // Proses transfer
-        $bank_account->balance -= $request->amount;
-        $targetAccount->balance += $request->amount;
+        $amount = $request->amount;
+        $description = "Transfer to account number " . $targetAccount->account_number;
 
-        // Simpan transaksi
-        $this->saveTransaction($bank_account, $targetAccount, $request->amount);
+        DB::transaction(function () use ($bank_account, $targetAccount, $amount, $description) {
+            $bank_account->balance -= $amount; // Kurangi saldo pengirim
+            $bank_account->save();
 
-        $bank_account->save();
-        $targetAccount->save();
+            $targetAccount->balance += $amount; // Tambah saldo penerima
+            $targetAccount->save();
+
+            $this->saveTransaction($bank_account, $targetAccount, $amount, $description);
+        });
 
         return redirect()->route('bank_accounts.index')->with('success', 'Transfer successful.');
     }
