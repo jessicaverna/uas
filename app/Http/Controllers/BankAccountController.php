@@ -9,6 +9,34 @@ use Illuminate\Http\Request;
 
 class BankAccountController extends Controller
 {
+    public function showTopUpForm(BankAccount $bank_account)
+    {
+        return view('bank_accounts.topup', compact('bank_account'));
+    }
+    public function topUp(Request $request, BankAccount $bank_account)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'pin' => 'required|digits:4',
+        ]);
+
+        // Verifikasi PIN
+        if ($request->pin !== $bank_account->pin) {
+            return back()->withErrors(['pin' => 'Invalid PIN'])->withInput();
+        }
+
+        // Lakukan proses top-up
+        $amount = $request->amount;
+
+        // Simpan transaksi
+        $this->saveTransaction($bank_account, null, $amount, 'Top up');
+
+        // Tambahkan saldo
+        $bank_account->balance += $amount;
+        $bank_account->save();
+
+        return redirect()->route('bank_accounts.index')->with('success', 'Top up successful.');
+    }
     public function index()
     {
         $accounts = auth()->user()->bankAccounts;
@@ -191,29 +219,30 @@ class BankAccountController extends Controller
 
 
     private function saveTransaction(BankAccount $sender, ?BankAccount $receiver, $amount, $description)
-{
-    // Simpan transaksi pengirim
-    $transactionSender = new Transaction([
-        'user_id' => auth()->user()->id,
-        'bank_account_id' => $sender->id,
-        'type' => 'withdrawal', // atau sesuaikan dengan kebutuhan Anda
-        'amount' => $amount,
-        'description' => $description,
-    ]);
-    $transactionSender->save();
-
-    // Jika ada penerima, simpan juga transaksi penerima
-    if ($receiver) {
-        $transactionReceiver = new Transaction([
-            'user_id' => $receiver->user_id,
-            'bank_account_id' => $receiver->id,
-            'type' => 'deposit', // atau sesuaikan dengan kebutuhan Anda
+    {
+        // Simpan transaksi pengirim (withdrawal)
+        $transactionSender = new Transaction([
+            'user_id' => auth()->user()->id,
+            'bank_account_id' => $sender->id,
+            'type' => 'withdrawal', // jenis transaksi withdrawal karena saldo berkurang
             'amount' => $amount,
             'description' => $description,
         ]);
-        $transactionReceiver->save();
+        $transactionSender->save();
+
+        // Jika ada penerima, simpan juga transaksi penerima (deposit)
+        if ($receiver) {
+            $transactionReceiver = new Transaction([
+                'user_id' => $receiver->user_id,
+                'bank_account_id' => $receiver->id,
+                'type' => 'deposit', // jenis transaksi deposit karena saldo bertambah
+                'amount' => $amount,
+                'description' => $description,
+            ]);
+            $transactionReceiver->save();
+        }
     }
-}
+
     public function transactions(BankAccount $bank_account)
     {
         $transactions = Transaction::where('bank_account_id', $bank_account->id)
@@ -222,42 +251,41 @@ class BankAccountController extends Controller
 
         return view('bank_accounts.transactions', compact('transactions', 'bank_account'));
     }
-    
+
     public function payBillForm(BankAccount $bank_account)
-{
-    return view('bank_accounts.pay_bill', compact('bank_account'));
-}
-
-public function payBill(Request $request, BankAccount $bank_account)
-{
-    $request->validate([
-        'virtual_account_number' => 'required|string',
-        'amount' => 'required|numeric|min:0.01',
-        'pin' => 'required|digits:4',
-    ]);
-
-    if ($request->pin !== $bank_account->pin) {
-        return back()->withErrors(['pin' => 'Invalid PIN'])->withInput();
-    }
-    
-    
-
-    // Verifikasi Saldo Cukup
-    if ($bank_account->balance < $request->amount) {
-        return back()->withErrors(['amount' => 'Insufficient balance to pay this bill'])->withInput();
+    {
+        return view('bank_accounts.pay_bill', compact('bank_account'));
     }
 
-    // Lakukan pembayaran tagihan
-    $description = 'Payment for virtual account ' . $request->virtual_account_number;
+    public function payBill(Request $request, BankAccount $bank_account)
+    {
+        $request->validate([
+            'virtual_account_number' => 'required|string',
+            'amount' => 'required|numeric|min:0.01',
+            'pin' => 'required|digits:4',
+        ]);
 
-    // Simpan transaksi
-    $this->saveTransaction($bank_account, null, $request->amount, $description);
+        if ($request->pin !== $bank_account->pin) {
+            return back()->withErrors(['pin' => 'Invalid PIN'])->withInput();
+        }
 
-    // Kurangi saldo bank account
-    $bank_account->balance -= $request->amount;
-    $bank_account->save();
 
-    return redirect()->route('bank_accounts.index')->with('success', 'Bill paid successfully.');
-}
 
+        // Verifikasi Saldo Cukup
+        if ($bank_account->balance < $request->amount) {
+            return back()->withErrors(['amount' => 'Insufficient balance to pay this bill'])->withInput();
+        }
+
+        // Lakukan pembayaran tagihan
+        $description = 'Payment for virtual account ' . $request->virtual_account_number;
+
+        // Simpan transaksi
+        $this->saveTransaction($bank_account, null, $request->amount, $description);
+
+        // Kurangi saldo bank account
+        $bank_account->balance -= $request->amount;
+        $bank_account->save();
+
+        return redirect()->route('bank_accounts.index')->with('success', 'Bill paid successfully.');
+    }
 }

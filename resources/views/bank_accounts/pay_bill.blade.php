@@ -14,10 +14,13 @@
             <label for="pin">PIN</label>
             <input type="password" name="pin" id="pin" class="form-control" required>
             @error('pin')
-    <div class="alert alert-danger">{{ $message }}</div>
-@enderror
-
+                <div class="alert alert-danger">{{ $message }}</div>
+            @enderror
         </div>
-        <button type="submit" class="btn btn-primary">Pay Bill</button>
+        <button type="submit" class="btn btn-primary mr-2">Pay Bill</button>
+        <a href="{{ route('bank_accounts.index') }}" class="btn btn-secondary">Back</a>
     </form>
 </div>
+
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>

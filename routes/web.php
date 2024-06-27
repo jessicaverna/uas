@@ -4,7 +4,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\BillController;
 use App\Models\BankAccount;
 
 
@@ -23,36 +22,37 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('bank_accounts', BankAccountController::class)->except(['show']);
     Route::get('bank_accounts/{bank_account}/verify-edit', [BankAccountController::class, 'verifyEdit'])
-    ->name('bank_accounts.verify_edit');
-    
-    Route::put('bank_accounts/{bank_account}/check-pin', [BankAccountController::class, 'checkPIN'])
-    ->name('bank_accounts.check_pin');
-    
-    Route::get('/bank_accounts/{bank_account}/transfer', [BankAccountController::class, 'showTransferForm'])->name('bank_accounts.show_transfer_form');
-Route::post('/bank_accounts/{bank_account}/transfer', [BankAccountController::class, 'transfer'])->name('bank_accounts.transfer');
-Route::post('/bank_accounts/{bank_account}/process-transfer', [BankAccountController::class, 'processTransfer'])->name('bank_accounts.process_transfer');
+        ->name('bank_accounts.verify_edit');
 
-Route::get('bank_accounts/{bank_account}/transactions', [BankAccountController::class, 'transactions'])
-->name('bank_accounts.transactions');
+    Route::put('bank_accounts/{bank_account}/check-pin', [BankAccountController::class, 'checkPIN'])
+        ->name('bank_accounts.check_pin');
+
+    Route::get('/bank_accounts/{bank_account}/transfer', [BankAccountController::class, 'showTransferForm'])->name('bank_accounts.show_transfer_form');
+    Route::post('/bank_accounts/{bank_account}/transfer', [BankAccountController::class, 'transfer'])->name('bank_accounts.transfer');
+    Route::post('/bank_accounts/{bank_account}/process-transfer', [BankAccountController::class, 'processTransfer'])->name('bank_accounts.process_transfer');
+
+    Route::get('bank_accounts/{bank_account}/transactions', [BankAccountController::class, 'transactions'])
+        ->name('bank_accounts.transactions');
 
     Route::post('bank_accounts/{bank_account}/confirm-transfer', [BankAccountController::class, 'confirmTransfer'])->name('bank_accounts.confirm_transfer');
 
     Route::get('bank_accounts/{account_number}/name', function ($account_number) {
         $bankAccount = BankAccount::where('account_number', $account_number)->first();
-    
+
         if (!$bankAccount) {
             return response()->json(['error' => 'Account number not found.'], 404);
         }
-    
+
         return response()->json(['account_name' => $bankAccount->account_name]);
     });
 });
 
-Route::get('/bills', [BillController::class, 'index'])->name('bills.index');
-Route::post('/bills', [BillController::class, 'store'])->name('bills.store');
-Route::post('/bills/{bill}/pay', [BillController::class, 'pay'])->name('bills.pay');
 
 Route::get('/bank_accounts/{bank_account}/pay_bill', [BankAccountController::class, 'payBillForm'])->name('bank_accounts.pay_bill_form');
 Route::post('/bank_accounts/{bank_account}/pay_bill', [BankAccountController::class, 'payBill'])->name('bank_accounts.pay_bill');
 
-require __DIR__.'/auth.php';
+Route::get('/bank-accounts/{bank_account}/topup', [BankAccountController::class, 'showTopUpForm'])->name('bank_accounts.topup_form');
+Route::post('/bank-accounts/{bank_account}/topup', [BankAccountController::class, 'topUp'])->name('bank_accounts.topup');
+
+
+require __DIR__ . '/auth.php';
