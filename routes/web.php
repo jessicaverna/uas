@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\BillController;
 use App\Models\BankAccount;
 
 
@@ -45,9 +46,13 @@ Route::get('bank_accounts/{bank_account}/transactions', [BankAccountController::
     
         return response()->json(['account_name' => $bankAccount->account_name]);
     });
-    
-
-
 });
+
+Route::get('/bills', [BillController::class, 'index'])->name('bills.index');
+Route::post('/bills', [BillController::class, 'store'])->name('bills.store');
+Route::post('/bills/{bill}/pay', [BillController::class, 'pay'])->name('bills.pay');
+
+Route::get('/bank_accounts/{bank_account}/pay_bill', [BankAccountController::class, 'payBillForm'])->name('bank_accounts.pay_bill_form');
+Route::post('/bank_accounts/{bank_account}/pay_bill', [BankAccountController::class, 'payBill'])->name('bank_accounts.pay_bill');
 
 require __DIR__.'/auth.php';
